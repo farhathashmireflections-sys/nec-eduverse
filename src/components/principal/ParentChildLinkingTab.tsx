@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Link2, Plus, Search, Trash2, UserCheck, Users, Filter, RefreshCw } from "lucide-react";
+import { Link2, Pencil, Plus, Search, Trash2, UserCheck, Users, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Guardian {
@@ -77,6 +77,8 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
   const [filterLinked, setFilterLinked] = useState<string>("__all");
   const [showAdd, setShowAdd] = useState(false);
   const [showLinkStudent, setShowLinkStudent] = useState(false);
+  const [showEditGuardian, setShowEditGuardian] = useState(false);
+  const [editingGuardian, setEditingGuardian] = useState<Guardian | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -89,7 +91,14 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     is_primary: true,
   });
 
-  // For linking student user accounts
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    relationship: "father",
+    phone: "",
+    email: "",
+    user_id: "",
+  });
+
   const [linkStudentId, setLinkStudentId] = useState("");
   const [linkStudentUserId, setLinkStudentUserId] = useState("");
 
@@ -118,7 +127,6 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       (supabase as any).from("student_enrollments").select("student_id, class_section_id").is("end_date", null),
     ]);
 
-    // Build enrollment lookup
     const enrollMap = new Map<string, string>();
     (enrollmentData || []).forEach((e: any) => enrollMap.set(e.student_id, e.class_section_id));
 
@@ -128,7 +136,6 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     const classMap = new Map<string, string>();
     (classData || []).forEach((c: any) => classMap.set(c.id, c.name));
 
-    // Enrich students with class/section info
     const enrichedStudents: StudentOption[] = (studentData || []).map((s: any) => {
       const secId = enrollMap.get(s.id);
       const sec = secId ? sectionMap.get(secId) : null;
@@ -141,7 +148,6 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
 
     const studentMap = new Map(enrichedStudents.map((s) => [s.id, s]));
 
-    // Enrich guardians
     const enriched: Guardian[] = (guardianData || []).map((g: any) => {
       const student = studentMap.get(g.student_id);
       return {
@@ -246,7 +252,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Parent account linked! Parent can now see this student in their panel.");
+      toast.success("Parent account linked!");
       loadData();
     }
   };
@@ -267,7 +273,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Student account linked! Student can now access their panel.");
+      toast.success("Student account linked!");
       setShowLinkStudent(false);
       setLinkStudentId("");
       setLinkStudentUserId("");
@@ -276,7 +282,43 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     setSaving(false);
   };
 
-  // Filtering logic
+  const openEditGuardian = (g: Guardian) => {
+    setEditingGuardian(g);
+    setEditForm({
+      full_name: g.full_name,
+      relationship: g.relationship || "father",
+      phone: g.phone || "",
+      email: g.email || "",
+      user_id: g.user_id || "",
+    });
+    setShowEditGuardian(true);
+  };
+
+  const handleUpdateGuardian = async () => {
+    if (!editingGuardian) return;
+    setSaving(true);
+    const { error } = await (supabase as any)
+      .from("student_guardians")
+      .update({
+        full_name: editForm.full_name.trim(),
+        relationship: editForm.relationship || null,
+        phone: editForm.phone || null,
+        email: editForm.email || null,
+        user_id: editForm.user_id || null,
+      })
+      .eq("id", editingGuardian.id);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Guardian updated!");
+      setShowEditGuardian(false);
+      setEditingGuardian(null);
+      loadData();
+    }
+    setSaving(false);
+  };
+
   const filteredSections = filterClass !== "__all"
     ? sections.filter((s) => s.class_id === filterClass)
     : sections;
@@ -291,24 +333,22 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
         g.email?.toLowerCase().includes(q);
       if (!matches) return false;
     }
-
     if (filterClass !== "__all") {
       if (g.class_name !== classes.find((c) => c.id === filterClass)?.name) return false;
     }
-
     if (filterSection !== "__all") {
       const sec = sections.find((s) => s.id === filterSection);
       if (g.section_name !== sec?.name) return false;
     }
-
     if (filterLinked === "linked" && !g.user_id) return false;
     if (filterLinked === "unlinked" && g.user_id) return false;
-
     return true;
   });
 
-  // Students without user accounts
   const unlinkedStudents = students.filter((s) => !s.user_id);
+
+  // Build a lookup for parent user names by user_id
+  const parentUserMap = new Map(parentUsers.map((p) => [p.user_id, p]));
 
   if (loading) {
     return (
@@ -356,7 +396,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                 Parent-Student Linking
               </CardTitle>
               <CardDescription>
-                Link parent & student user accounts for synchronized panel access and data visibility
+                Link parent & student user accounts for synchronized panel access
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -385,9 +425,9 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                           <SelectValue placeholder="Select student" />
                         </SelectTrigger>
                         <SelectContent>
-                          {unlinkedStudents.map((s) => (
+                          {students.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
-                              {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""}
+                              {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""} {s.user_id ? "✓" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -428,7 +468,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                   <DialogHeader>
                     <DialogTitle>Link Parent to Student</DialogTitle>
                     <DialogDescription>
-                      Create a guardian record and optionally link to a parent user account for panel access
+                      Create a guardian record and optionally link to a parent user account
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
@@ -493,26 +533,24 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                       />
                     </div>
 
-                    {parentUsers.length > 0 && (
-                      <div className="space-y-2">
-                        <Label>Link to Parent Account (for panel access)</Label>
-                        <Select value={form.user_id} onValueChange={(v) => setForm((p) => ({ ...p, user_id: v }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select parent account" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {parentUsers.map((p) => (
-                              <SelectItem key={p.user_id} value={p.user_id}>
-                                {p.full_name} ({p.email})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          Linked parents can see this student's data in their Parent Panel
-                        </p>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label>Link to Parent Account (for panel access)</Label>
+                      <Select value={form.user_id} onValueChange={(v) => setForm((p) => ({ ...p, user_id: v }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select parent account (optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {parentUsers.map((p) => (
+                            <SelectItem key={p.user_id} value={p.user_id}>
+                              {p.full_name} ({p.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Linked parents can see this student's data in their Parent Panel
+                      </p>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
@@ -590,73 +628,158 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                     <TableHead>Relationship</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Parent Account</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((g) => (
-                    <TableRow key={g.id}>
-                      <TableCell className="font-medium">{g.full_name}</TableCell>
-                      <TableCell>{g.student_first_name} {g.student_last_name}</TableCell>
-                      <TableCell>
-                        {g.class_name ? (
-                          <span className="text-xs">{g.class_name} — {g.section_name}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Not enrolled</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {g.relationship || "—"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs">
-                          {g.phone && <p>{g.phone}</p>}
-                          {g.email && <p className="text-muted-foreground">{g.email}</p>}
-                          {!g.phone && !g.email && <span className="text-muted-foreground">—</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {g.user_id ? (
-                          <Badge className="bg-primary/10 text-primary border-primary/20">
-                            <UserCheck className="h-3 w-3 mr-1" /> Linked
+                  {filtered.map((g) => {
+                    const linkedParent = g.user_id ? parentUserMap.get(g.user_id) : null;
+                    return (
+                      <TableRow key={g.id}>
+                        <TableCell className="font-medium">{g.full_name}</TableCell>
+                        <TableCell>{g.student_first_name} {g.student_last_name}</TableCell>
+                        <TableCell>
+                          {g.class_name ? (
+                            <span className="text-xs">{g.class_name} — {g.section_name}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not enrolled</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {g.relationship || "—"}
                           </Badge>
-                        ) : parentUsers.length > 0 ? (
-                          <Select onValueChange={(userId) => handleLinkParentUser(g.id, userId)}>
-                            <SelectTrigger className="h-7 w-32 text-xs">
-                              <SelectValue placeholder="Link account" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {parentUsers.map((p) => (
-                                <SelectItem key={p.user_id} value={p.user_id}>
-                                  {p.full_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant="secondary">Not linked</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(g.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs">
+                            {g.phone && <p>{g.phone}</p>}
+                            {g.email && <p className="text-muted-foreground">{g.email}</p>}
+                            {!g.phone && !g.email && <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {g.user_id ? (
+                            <Badge className="bg-primary/10 text-primary border-primary/20">
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              {linkedParent?.full_name || "Linked"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Not linked</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditGuardian(g)}
+                              className="h-8 w-8"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(g.id)}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Guardian Dialog */}
+      <Dialog open={showEditGuardian} onOpenChange={setShowEditGuardian}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Guardian</DialogTitle>
+            <DialogDescription>
+              Update guardian details and link/unlink parent account
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Guardian Full Name *</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Relationship</Label>
+                <Select value={editForm.relationship} onValueChange={(v) => setEditForm((p) => ({ ...p, relationship: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="father">Father</SelectItem>
+                    <SelectItem value="mother">Mother</SelectItem>
+                    <SelectItem value="guardian">Guardian</SelectItem>
+                    <SelectItem value="sibling">Sibling</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Link to Parent Panel Account</Label>
+              <Select
+                value={editForm.user_id || "__none"}
+                onValueChange={(v) => setEditForm((p) => ({ ...p, user_id: v === "__none" ? "" : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parent account" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— No account linked —</SelectItem>
+                  {parentUsers.map((p) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>
+                      {p.full_name} ({p.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Link a parent panel user account so they can access the student's data
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditGuardian(false)}>Cancel</Button>
+            <Button onClick={handleUpdateGuardian} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
