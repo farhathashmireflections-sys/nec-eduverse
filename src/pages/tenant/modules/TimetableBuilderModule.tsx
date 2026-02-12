@@ -32,7 +32,7 @@ import { useConflictDetection } from "./components/timetable/useConflictDetectio
 import { TeacherTypeahead } from "./components/timetable/TeacherTypeahead";
 import { PublishControls } from "./components/timetable/PublishControls";
 import { useTimetableExport } from "./components/timetable/useTimetableExport";
-import { SmartTimetableGenerator } from "@/components/ai/SmartTimetableGenerator";
+
 
 type PeriodRow = {
   id: string;
@@ -445,17 +445,6 @@ export function TimetableBuilderModule() {
 
   return (
     <div className="space-y-4">
-      {schoolId && (
-        <Card className="shadow-elevated no-print">
-          <CardHeader>
-            <CardTitle className="font-display text-xl">AI Timetable (Smart Suggestions)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SmartTimetableGenerator schoolId={schoolId} />
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="shadow-elevated no-print">
         <CardHeader>
           <CardTitle className="font-display text-xl">Timetable Builder</CardTitle>
