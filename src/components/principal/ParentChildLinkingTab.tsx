@@ -122,7 +122,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       supabase.from("students").select("id, first_name, last_name, user_id").eq("school_id", schoolId).order("first_name"),
       supabase.from("academic_classes").select("id, name").eq("school_id", schoolId).order("name"),
       supabase.from("class_sections").select("id, name, class_id").eq("school_id", schoolId).order("name"),
-      (supabase as any).from("student_enrollments").select("student_id, class_section_id").is("end_date", null),
+      (supabase as any).from("student_enrollments").select("student_id, class_section_id, school_id").eq("school_id", schoolId).is("end_date", null),
       supabase.from("school_user_directory").select("user_id, display_name, email").eq("school_id", schoolId),
       (supabase as any).from("user_roles").select("user_id, role").eq("school_id", schoolId).in("role", ["parent", "student"]),
     ]);
@@ -182,14 +182,24 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       });
     });
 
-    // Build student user list from directory + roles
+    // Also add all directory users as potential parent accounts (some may not have parent role yet)
+    (directoryData || []).forEach((d: any) => {
+      if (!parentUserIds.has(d.user_id)) {
+        parentList.push({
+          user_id: d.user_id,
+          email: d.email || "",
+          full_name: d.display_name || d.email || "User",
+        });
+      }
+    });
+
+    // Build student user list - show ALL directory users so principal can link any account
     const studentUserList: StudentUser[] = [];
-    studentUserIds.forEach((uid) => {
-      const dir = dirMap.get(uid);
+    (directoryData || []).forEach((d: any) => {
       studentUserList.push({
-        user_id: uid,
-        email: dir?.email || "",
-        full_name: dir?.display_name || dir?.email || "Student",
+        user_id: d.user_id,
+        email: d.email || "",
+        full_name: d.display_name || d.email || "User",
       });
     });
 
