@@ -112,19 +112,19 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     const [
       { data: guardianData },
       { data: studentData },
-      { data: parentRoles },
-      { data: studentRoles },
       { data: classData },
       { data: sectionData },
       { data: enrollmentData },
+      { data: directoryData },
+      { data: rolesData },
     ] = await Promise.all([
       (supabase as any).from("student_guardians").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }),
       supabase.from("students").select("id, first_name, last_name, user_id").eq("school_id", schoolId).order("first_name"),
-      (supabase as any).from("user_roles").select("user_id").eq("school_id", schoolId).eq("role", "parent"),
-      (supabase as any).from("user_roles").select("user_id").eq("school_id", schoolId).eq("role", "student"),
       supabase.from("academic_classes").select("id, name").eq("school_id", schoolId).order("name"),
       supabase.from("class_sections").select("id, name, class_id").eq("school_id", schoolId).order("name"),
       (supabase as any).from("student_enrollments").select("student_id, class_section_id").is("end_date", null),
+      supabase.from("school_user_directory").select("user_id, display_name, email").eq("school_id", schoolId),
+      (supabase as any).from("user_roles").select("user_id, role").eq("school_id", schoolId).in("role", ["parent", "student"]),
     ]);
 
     const enrollMap = new Map<string, string>();
@@ -135,6 +135,18 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
 
     const classMap = new Map<string, string>();
     (classData || []).forEach((c: any) => classMap.set(c.id, c.name));
+
+    // Build directory lookup
+    const dirMap = new Map<string, { display_name: string; email: string }>();
+    (directoryData || []).forEach((d: any) => dirMap.set(d.user_id, { display_name: d.display_name || "", email: d.email || "" }));
+
+    // Build role sets
+    const parentUserIds = new Set<string>();
+    const studentUserIds = new Set<string>();
+    (rolesData || []).forEach((r: any) => {
+      if (r.role === "parent") parentUserIds.add(r.user_id);
+      if (r.role === "student") studentUserIds.add(r.user_id);
+    });
 
     const enrichedStudents: StudentOption[] = (studentData || []).map((s: any) => {
       const secId = enrollMap.get(s.id);
@@ -159,35 +171,27 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       };
     });
 
-    // Load parent user profiles
-    let parentList: ParentUser[] = [];
-    if (parentRoles && parentRoles.length > 0) {
-      const parentUserIds = parentRoles.map((p: any) => p.user_id);
-      const { data: profiles } = await (supabase as any)
-        .from("profiles")
-        .select("id, email, full_name")
-        .in("id", parentUserIds);
-      parentList = (profiles || []).map((p: any) => ({
-        user_id: p.id,
-        email: p.email || "",
-        full_name: p.full_name || p.email || "Parent",
-      }));
-    }
+    // Build parent user list from directory + roles
+    const parentList: ParentUser[] = [];
+    parentUserIds.forEach((uid) => {
+      const dir = dirMap.get(uid);
+      parentList.push({
+        user_id: uid,
+        email: dir?.email || "",
+        full_name: dir?.display_name || dir?.email || "Parent",
+      });
+    });
 
-    // Load student user profiles
-    let studentUserList: StudentUser[] = [];
-    if (studentRoles && studentRoles.length > 0) {
-      const studentUserIds = studentRoles.map((s: any) => s.user_id);
-      const { data: profiles } = await (supabase as any)
-        .from("profiles")
-        .select("id, email, full_name")
-        .in("id", studentUserIds);
-      studentUserList = (profiles || []).map((p: any) => ({
-        user_id: p.id,
-        email: p.email || "",
-        full_name: p.full_name || p.email || "Student",
-      }));
-    }
+    // Build student user list from directory + roles
+    const studentUserList: StudentUser[] = [];
+    studentUserIds.forEach((uid) => {
+      const dir = dirMap.get(uid);
+      studentUserList.push({
+        user_id: uid,
+        email: dir?.email || "",
+        full_name: dir?.display_name || dir?.email || "Student",
+      });
+    });
 
     setGuardians(enriched);
     setStudents(enrichedStudents);
@@ -197,7 +201,6 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     setSections((sectionData || []) as SectionOption[]);
     setLoading(false);
   };
-
   const handleSave = async () => {
     if (!form.student_id || !form.full_name.trim()) {
       toast.error("Student and guardian name are required");
