@@ -31,7 +31,7 @@ interface StudentOption {
   id: string;
   first_name: string;
   last_name: string | null;
-  user_id: string | null;
+  profile_id: string | null;
   class_name?: string;
   section_name?: string;
 }
@@ -119,7 +119,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       rolesRes,
     ] = await Promise.all([
       (supabase as any).from("student_guardians").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }),
-      (supabase as any).from("students").select("id, first_name, last_name, user_id").eq("school_id", schoolId).order("first_name"),
+      (supabase as any).from("students").select("id, first_name, last_name, profile_id").eq("school_id", schoolId).order("first_name"),
       supabase.from("academic_classes").select("id, name").eq("school_id", schoolId).order("name"),
       supabase.from("class_sections").select("id, name, class_id").eq("school_id", schoolId).order("name"),
       (supabase as any).from("student_enrollments").select("student_id, class_section_id, school_id").eq("school_id", schoolId).is("end_date", null),
@@ -282,9 +282,9 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     }
 
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("students")
-      .update({ user_id: linkStudentUserId })
+      .update({ profile_id: linkStudentUserId })
       .eq("id", linkStudentId)
       .eq("school_id", schoolId);
 
@@ -363,7 +363,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     return true;
   });
 
-  const unlinkedStudents = students.filter((s) => !s.user_id);
+  const unlinkedStudents = students.filter((s) => !s.profile_id);
 
   // Build a lookup for parent user names by user_id
   const parentUserMap = new Map(parentUsers.map((p) => [p.user_id, p]));
@@ -394,7 +394,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
         <div className="rounded-xl border bg-surface-2 p-3">
           <p className="text-xs text-muted-foreground">Student Accounts Linked</p>
           <p className="mt-1 font-display text-lg font-semibold text-primary">
-            {students.filter((s) => s.user_id).length}
+            {students.filter((s) => s.profile_id).length}
           </p>
         </div>
         <div className="rounded-xl border bg-surface-2 p-3">
@@ -448,7 +448,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                           )}
                           {students.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
-                              {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""} {s.user_id ? "✓" : ""}
+                              {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""} {s.profile_id ? "✓" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
