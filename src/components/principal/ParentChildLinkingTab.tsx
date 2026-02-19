@@ -127,6 +127,15 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       (supabase as any).from("user_roles").select("user_id, role").eq("school_id", schoolId).in("role", ["parent", "student"]),
     ]);
 
+    // Log errors for debugging
+    if (guardianRes.error) console.error("[ParentChildLinking] guardians error:", guardianRes.error);
+    if (studentRes.error) console.error("[ParentChildLinking] students error:", studentRes.error);
+    if (classRes.error) console.error("[ParentChildLinking] classes error:", classRes.error);
+    if (sectionRes.error) console.error("[ParentChildLinking] sections error:", sectionRes.error);
+    if (enrollmentRes.error) console.error("[ParentChildLinking] enrollments error:", enrollmentRes.error);
+    if (directoryRes.error) console.error("[ParentChildLinking] directory error:", directoryRes.error);
+    if (rolesRes.error) console.error("[ParentChildLinking] roles error:", rolesRes.error);
+
     const guardianData = guardianRes.data || [];
     const studentData = studentRes.data || [];
     const classData = classRes.data || [];
@@ -135,7 +144,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     const directoryData = directoryRes.data || [];
     const rolesData = rolesRes.data || [];
 
-    console.log("[ParentChildLinking] students fetched:", studentData.length, "enrollments:", enrollmentData.length, "directory:", directoryData.length);
+    console.log("[ParentChildLinking] students fetched:", studentData.length, "enrollments:", enrollmentData.length, "directory:", directoryData.length, "classes:", classData.length, "sections:", sectionData.length);
 
     const enrollMap = new Map<string, string>();
     enrollmentData.forEach((e: any) => enrollMap.set(e.student_id, e.class_section_id));
@@ -434,6 +443,9 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                           <SelectValue placeholder="Select student" />
                         </SelectTrigger>
                         <SelectContent>
+                          {students.length === 0 && (
+                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">No students found in database</div>
+                          )}
                           {students.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""} {s.user_id ? "✓" : ""}
@@ -488,6 +500,9 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
                           <SelectValue placeholder="Select student" />
                         </SelectTrigger>
                         <SelectContent>
+                          {students.length === 0 && (
+                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">No students found in database</div>
+                          )}
                           {students.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.first_name} {s.last_name || ""} {s.class_name ? `(${s.class_name} - ${s.section_name})` : ""}
