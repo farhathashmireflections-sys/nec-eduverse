@@ -110,16 +110,16 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     setLoading(true);
 
     const [
-      { data: guardianData },
-      { data: studentData },
-      { data: classData },
-      { data: sectionData },
-      { data: enrollmentData },
-      { data: directoryData },
-      { data: rolesData },
+      guardianRes,
+      studentRes,
+      classRes,
+      sectionRes,
+      enrollmentRes,
+      directoryRes,
+      rolesRes,
     ] = await Promise.all([
       (supabase as any).from("student_guardians").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }),
-      supabase.from("students").select("id, first_name, last_name, user_id").eq("school_id", schoolId).order("first_name"),
+      (supabase as any).from("students").select("id, first_name, last_name, user_id").eq("school_id", schoolId).order("first_name"),
       supabase.from("academic_classes").select("id, name").eq("school_id", schoolId).order("name"),
       supabase.from("class_sections").select("id, name, class_id").eq("school_id", schoolId).order("name"),
       (supabase as any).from("student_enrollments").select("student_id, class_section_id, school_id").eq("school_id", schoolId).is("end_date", null),
@@ -127,28 +127,36 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       (supabase as any).from("user_roles").select("user_id, role").eq("school_id", schoolId).in("role", ["parent", "student"]),
     ]);
 
+    const guardianData = guardianRes.data || [];
+    const studentData = studentRes.data || [];
+    const classData = classRes.data || [];
+    const sectionData = sectionRes.data || [];
+    const enrollmentData = enrollmentRes.data || [];
+    const directoryData = directoryRes.data || [];
+    const rolesData = rolesRes.data || [];
+
+    console.log("[ParentChildLinking] students fetched:", studentData.length, "enrollments:", enrollmentData.length, "directory:", directoryData.length);
+
     const enrollMap = new Map<string, string>();
-    (enrollmentData || []).forEach((e: any) => enrollMap.set(e.student_id, e.class_section_id));
+    enrollmentData.forEach((e: any) => enrollMap.set(e.student_id, e.class_section_id));
 
     const sectionMap = new Map<string, { name: string; class_id: string }>();
-    (sectionData || []).forEach((s: any) => sectionMap.set(s.id, { name: s.name, class_id: s.class_id }));
+    sectionData.forEach((s: any) => sectionMap.set(s.id, { name: s.name, class_id: s.class_id }));
 
     const classMap = new Map<string, string>();
-    (classData || []).forEach((c: any) => classMap.set(c.id, c.name));
+    classData.forEach((c: any) => classMap.set(c.id, c.name));
 
-    // Build directory lookup
     const dirMap = new Map<string, { display_name: string; email: string }>();
-    (directoryData || []).forEach((d: any) => dirMap.set(d.user_id, { display_name: d.display_name || "", email: d.email || "" }));
+    directoryData.forEach((d: any) => dirMap.set(d.user_id, { display_name: d.display_name || "", email: d.email || "" }));
 
-    // Build role sets
     const parentUserIds = new Set<string>();
     const studentUserIds = new Set<string>();
-    (rolesData || []).forEach((r: any) => {
+    rolesData.forEach((r: any) => {
       if (r.role === "parent") parentUserIds.add(r.user_id);
       if (r.role === "student") studentUserIds.add(r.user_id);
     });
 
-    const enrichedStudents: StudentOption[] = (studentData || []).map((s: any) => {
+    const enrichedStudents: StudentOption[] = studentData.map((s: any) => {
       const secId = enrollMap.get(s.id);
       const sec = secId ? sectionMap.get(secId) : null;
       return {
@@ -160,7 +168,7 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
 
     const studentMap = new Map(enrichedStudents.map((s) => [s.id, s]));
 
-    const enriched: Guardian[] = (guardianData || []).map((g: any) => {
+    const enriched: Guardian[] = guardianData.map((g: any) => {
       const student = studentMap.get(g.student_id);
       return {
         ...g,
@@ -171,31 +179,19 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       };
     });
 
-    // Build parent user list from directory + roles
+    // Build parent user list from directory
     const parentList: ParentUser[] = [];
-    parentUserIds.forEach((uid) => {
-      const dir = dirMap.get(uid);
+    directoryData.forEach((d: any) => {
       parentList.push({
-        user_id: uid,
-        email: dir?.email || "",
-        full_name: dir?.display_name || dir?.email || "Parent",
+        user_id: d.user_id,
+        email: d.email || "",
+        full_name: d.display_name || d.email || "User",
       });
     });
 
-    // Also add all directory users as potential parent accounts (some may not have parent role yet)
-    (directoryData || []).forEach((d: any) => {
-      if (!parentUserIds.has(d.user_id)) {
-        parentList.push({
-          user_id: d.user_id,
-          email: d.email || "",
-          full_name: d.display_name || d.email || "User",
-        });
-      }
-    });
-
-    // Build student user list - show ALL directory users so principal can link any account
+    // Build student user list from directory
     const studentUserList: StudentUser[] = [];
-    (directoryData || []).forEach((d: any) => {
+    directoryData.forEach((d: any) => {
       studentUserList.push({
         user_id: d.user_id,
         email: d.email || "",
@@ -207,8 +203,8 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
     setStudents(enrichedStudents);
     setParentUsers(parentList);
     setStudentUsers(studentUserList);
-    setClasses((classData || []) as ClassOption[]);
-    setSections((sectionData || []) as SectionOption[]);
+    setClasses(classData as ClassOption[]);
+    setSections(sectionData as SectionOption[]);
     setLoading(false);
   };
   const handleSave = async () => {
