@@ -45,6 +45,20 @@ export function SubjectCatalogCard({
 
   const remove = async (subjectId: string) => {
     if (!schoolId) return;
+
+    // Delete dependent rows first to avoid FK constraint errors
+    await supabase
+      .from("teacher_subject_assignments")
+      .delete()
+      .eq("school_id", schoolId)
+      .eq("subject_id", subjectId);
+
+    await supabase
+      .from("class_section_subjects")
+      .delete()
+      .eq("school_id", schoolId)
+      .eq("subject_id", subjectId);
+
     const { error } = await supabase
       .from("subjects")
       .delete()

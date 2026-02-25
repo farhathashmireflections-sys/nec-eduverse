@@ -6,6 +6,7 @@ import {
   GraduationCap,
   Plus,
   Settings,
+  Trash2,
   User,
   UserCog,
   Users,
@@ -264,7 +265,22 @@ export function AcademicModule() {
     await refresh();
   };
 
-  // Student Edit/Delete handlers
+  const deleteClass = async (classId: string) => {
+    if (!schoolId) return;
+    // Delete sections first, then the class
+    const classSections = sections.filter((s) => s.class_id === classId);
+    for (const sec of classSections) {
+      await supabase.from("student_enrollments").delete().eq("school_id", schoolId).eq("class_section_id", sec.id);
+      await supabase.from("teacher_assignments").delete().eq("school_id", schoolId).eq("class_section_id", sec.id);
+      await supabase.from("teacher_subject_assignments").delete().eq("school_id", schoolId).eq("class_section_id", sec.id);
+      await supabase.from("class_section_subjects").delete().eq("school_id", schoolId).eq("class_section_id", sec.id);
+      await supabase.from("class_sections").delete().eq("school_id", schoolId).eq("id", sec.id);
+    }
+    const { error } = await supabase.from("academic_classes").delete().eq("school_id", schoolId).eq("id", classId);
+    if (error) return toast.error(error.message);
+    toast.success("Class deleted");
+    await refresh();
+  };
   const openEditStudent = (student: StudentRow) => {
     setEditingStudent(student);
     const enrollment = enrollments.find((e) => e.student_id === student.id);
@@ -702,11 +718,21 @@ export function AcademicModule() {
                           </Badge>
                         </div>
                         {schoolId && (
-                          <EditClassDialog
-                            classData={c}
-                            schoolId={schoolId}
-                            onSaved={refresh}
-                          />
+                          <div className="flex items-center gap-1">
+                            <EditClassDialog
+                              classData={c}
+                              schoolId={schoolId}
+                              onSaved={refresh}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => deleteClass(c.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ))}

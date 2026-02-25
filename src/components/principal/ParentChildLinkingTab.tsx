@@ -222,6 +222,17 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
       return;
     }
 
+    // Check for duplicate guardian link (same student + same user_id)
+    if (form.user_id) {
+      const duplicate = guardians.find(
+        (g) => g.student_id === form.student_id && g.user_id === form.user_id
+      );
+      if (duplicate) {
+        toast.error("This parent account is already linked to this student.");
+        return;
+      }
+    }
+
     setSaving(true);
     const { error } = await (supabase as any)
       .from("student_guardians")
@@ -278,6 +289,15 @@ export function ParentChildLinkingTab({ schoolId }: Props) {
   const handleLinkStudentUser = async () => {
     if (!linkStudentId || !linkStudentUserId) {
       toast.error("Select both a student and a user account");
+      return;
+    }
+
+    // Check if this user account is already linked to another student
+    const alreadyLinked = students.find(
+      (s) => s.profile_id === linkStudentUserId && s.id !== linkStudentId
+    );
+    if (alreadyLinked) {
+      toast.error(`This account is already linked to ${alreadyLinked.first_name} ${alreadyLinked.last_name || ""}. Unlink it first.`);
       return;
     }
 
