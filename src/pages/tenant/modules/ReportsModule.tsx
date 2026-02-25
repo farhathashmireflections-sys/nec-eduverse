@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Download, Filter, Search } from "lucide-react";
+import { Download, Filter, FileText, GraduationCap, Search } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -9,10 +9,14 @@ import { useSchoolPermissions } from "@/hooks/useSchoolPermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { useReportCardData } from "@/hooks/useReportCardData";
+import { ReportCardView, ReportCardListItem, type ReportCardData } from "@/components/academic/ReportCardView";
 
 type Section = { id: string; name: string; class_id: string };
 type ClassRow = { id: string; name: string };
@@ -119,6 +123,12 @@ export function ReportsModule() {
   const [query, setQuery] = useState<string>("");
   const [studentRows, setStudentRows] = useState<StudentReportRow[]>([]);
   const [gradesBusy, setGradesBusy] = useState(false);
+
+  // Report card state
+  const [rcSectionId, setRcSectionId] = useState<string>("");
+  const [rcTermLabel, setRcTermLabel] = useState<string>("");
+  const [viewingCard, setViewingCard] = useState<ReportCardData | null>(null);
+  const { reportCards, loading: rcLoading, generate: rcGenerate } = useReportCardData();
 
   useEffect(() => {
     if (perms.loading) return;
@@ -404,6 +414,7 @@ export function ReportsModule() {
         <TabsList className="w-full">
           <TabsTrigger value="attendance" className="flex-1">Attendance</TabsTrigger>
           <TabsTrigger value="grades" className="flex-1">Grades</TabsTrigger>
+          <TabsTrigger value="report-cards" className="flex-1">Report Cards</TabsTrigger>
         </TabsList>
 
         <TabsContent value="attendance" className="space-y-4">
@@ -571,6 +582,110 @@ export function ReportsModule() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Report Cards Tab */}
+        <TabsContent value="report-cards" className="space-y-4">
+          {viewingCard ? (
+            <ReportCardView data={viewingCard} onClose={() => setViewingCard(null)} />
+          ) : (
+            <>
+              <Card className="shadow-elevated">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 font-display text-lg">
+                    <GraduationCap className="h-5 w-5" />
+                    Generate Report Cards
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Generate physical-style report cards with subject-wise marks, grades, percentages, and ranks for any section.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-[200px] space-y-1.5">
+                      <Label className="text-xs">Section *</Label>
+                      <Select value={rcSectionId} onValueChange={setRcSectionId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sections.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {sectionLabel(s)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="min-w-[150px] space-y-1.5">
+                      <Label className="text-xs">Term (optional)</Label>
+                      <Input
+                        value={rcTermLabel}
+                        onChange={(e) => setRcTermLabel(e.target.value)}
+                        placeholder="e.g. Term 1, Midterm"
+                      />
+                    </div>
+                    <Button
+                      variant="hero"
+                      onClick={async () => {
+                        if (!schoolId || !rcSectionId) {
+                          toast.error("Select a section first");
+                          return;
+                        }
+                        const schoolName = tenant.status === "ready" ? tenant.school?.name : undefined;
+                        await rcGenerate({
+                          schoolId,
+                          sectionId: rcSectionId,
+                          termLabel: rcTermLabel.trim() || undefined,
+                          schoolName: schoolName ?? undefined,
+                        });
+                      }}
+                      disabled={rcLoading || !rcSectionId}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      {rcLoading ? "Generating..." : "Generate"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {reportCards.length > 0 && (
+                <Card className="shadow-elevated">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="font-display text-lg">Student Report Cards</CardTitle>
+                      <Badge variant="secondary">{reportCards.length} students</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-auto rounded-xl border">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="border-b px-3 py-2 text-left font-semibold">Student</th>
+                            <th className="border-b px-3 py-2 text-left font-semibold">Class</th>
+                            <th className="border-b px-3 py-2 text-right font-semibold">Marks</th>
+                            <th className="border-b px-3 py-2 text-right font-semibold">%</th>
+                            <th className="border-b px-3 py-2 text-center font-semibold">Grade</th>
+                            <th className="border-b px-3 py-2 text-center font-semibold">Rank</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportCards.map((card) => (
+                            <ReportCardListItem
+                              key={card.studentId}
+                              data={card}
+                              onView={() => setViewingCard(card)}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>
