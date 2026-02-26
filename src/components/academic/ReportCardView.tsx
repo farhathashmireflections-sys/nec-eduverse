@@ -1,7 +1,8 @@
 import { useMemo, useRef } from "react";
-import { Download, Printer } from "lucide-react";
+import { Download, FileText, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { downloadReportCardPDF } from "@/lib/report-card-pdf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ---------- types ----------
@@ -172,6 +173,9 @@ export function ReportCardView({
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => downloadReportCardPDF(data)}>
+            <FileText className="mr-1 h-3.5 w-3.5" /> PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-1 h-3.5 w-3.5" /> Print
           </Button>
