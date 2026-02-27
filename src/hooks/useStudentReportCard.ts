@@ -9,8 +9,10 @@ import {
 } from "@/components/academic/ReportCardView";
 
 /**
- * Hook that generates a report card for a single student by finding their
- * active enrollment section and aggregating published assessment data.
+ * Hook that generates a report card for a single student.
+ * Uses a marks-first approach: finds the student's marks first,
+ * then fetches related assessments — avoiding RLS issues where
+ * student/parent roles can't query academic_assessments by section.
  */
 export function useStudentReportCard() {
   const [reportCard, setReportCard] = useState<ReportCardData | null>(null);
@@ -32,7 +34,7 @@ export function useStudentReportCard() {
 
     try {
       // 1. Find the student's active enrollment to get section
-      const { data: enrollment } = await supabase
+      const { data: enrollment, error: enrollError } = await supabase
         .from("student_enrollments")
         .select("class_section_id")
         .eq("school_id", schoolId)
@@ -42,38 +44,76 @@ export function useStudentReportCard() {
         .limit(1)
         .maybeSingle();
 
+      if (enrollError) {
+        console.error("Enrollment error:", enrollError);
+        toast.error("Could not find enrollment: " + enrollError.message);
+        return;
+      }
+
       if (!enrollment) {
-        toast.error("No active enrollment found.");
+        toast.error("No active enrollment found for this student.");
         return;
       }
 
       const sectionId = enrollment.class_section_id;
 
-      // 2. Fetch all required data in parallel
+      // 2. Fetch student's marks first (marks-first approach avoids RLS issues on assessments)
+      const { data: studentMarksRaw, error: marksError } = await supabase
+        .from("student_marks")
+        .select("assessment_id, marks")
+        .eq("school_id", schoolId)
+        .eq("student_id", studentId);
+
+      if (marksError) {
+        console.error("Marks error:", marksError);
+        toast.error("Could not fetch marks: " + marksError.message);
+        return;
+      }
+
+      const studentMarksData = studentMarksRaw ?? [];
+
+      if (studentMarksData.length === 0) {
+        toast.error("No marks recorded for this student yet. Please ensure assessments have been graded.");
+        return;
+      }
+
+      // Get unique assessment IDs from the student's marks
+      const assessmentIds = [...new Set(studentMarksData.map(m => m.assessment_id))];
+
+      // 3. Fetch all required data in parallel
       const [
         studentRes,
-        enrollRes,
         assessRes,
         subjectsRes,
         thresholdsRes,
         sectionRes,
         classesRes,
+        enrollRes,
         attendanceSessionsRes,
       ] = await Promise.all([
         supabase.from("students").select("id, first_name, last_name, parent_name").eq("id", studentId).single(),
-        supabase.from("student_enrollments").select("student_id").eq("school_id", schoolId).eq("class_section_id", sectionId).is("end_date", null),
-        supabase.from("academic_assessments").select("id, title, max_marks, subject_id, term_label, is_published").eq("school_id", schoolId).eq("class_section_id", sectionId).eq("is_published", true).limit(500),
+        // Fetch assessments by their IDs (not by section — avoids RLS issues)
+        supabase.from("academic_assessments").select("id, title, max_marks, subject_id, term_label, is_published, class_section_id").in("id", assessmentIds),
         supabase.from("subjects").select("id, name").eq("school_id", schoolId),
         supabase.from("grade_thresholds").select("grade_label, min_percentage, max_percentage").eq("school_id", schoolId).order("sort_order"),
-        supabase.from("class_sections").select("id, name, class_id").eq("id", sectionId).single(),
+        supabase.from("class_sections").select("id, name, class_id").eq("id", sectionId).maybeSingle(),
         supabase.from("academic_classes").select("id, name").eq("school_id", schoolId),
+        supabase.from("student_enrollments").select("student_id").eq("school_id", schoolId).eq("class_section_id", sectionId).is("end_date", null),
         supabase.from("attendance_sessions").select("id").eq("school_id", schoolId).eq("class_section_id", sectionId),
       ]);
 
       const student = studentRes.data;
       if (!student) { toast.error("Student not found."); return; }
 
-      const assessments = assessRes.data ?? [];
+      // Filter to only published assessments from the student's section
+      const allAssessments = assessRes.data ?? [];
+      let assessments = allAssessments.filter((a: any) => a.is_published && a.class_section_id === sectionId);
+
+      // If no section-filtered assessments, try all published ones (fallback)
+      if (assessments.length === 0) {
+        assessments = allAssessments.filter((a: any) => a.is_published);
+      }
+
       const subjects = subjectsRes.data ?? [];
       const thresholds = (thresholdsRes.data ?? []) as GradeThreshold[];
       const section = sectionRes.data;
@@ -86,7 +126,7 @@ export function useStudentReportCard() {
         : assessments;
 
       if (filteredAssessments.length === 0) {
-        toast.error("No published assessments found" + (termLabel ? ` for "${termLabel}"` : ""));
+        toast.error("No published assessments found" + (termLabel ? ` for "${termLabel}"` : "") + ". Please ensure assessments are published by the teacher.");
         return;
       }
 
@@ -95,17 +135,17 @@ export function useStudentReportCard() {
       const sectionName = section?.name ?? "Section";
       const subjectMap = new Map(subjects.map((s: any) => [s.id, s.name]));
 
-      // 3. Fetch marks for ALL students in section (for ranking)
-      const assessmentIds = filteredAssessments.map((a: any) => a.id);
+      // 4. Fetch marks for ALL students in section (for ranking)
+      const filteredAssessmentIds = filteredAssessments.map((a: any) => a.id);
       const { data: allMarks } = await supabase
         .from("student_marks")
         .select("student_id, assessment_id, marks")
         .eq("school_id", schoolId)
-        .in("assessment_id", assessmentIds);
+        .in("assessment_id", filteredAssessmentIds);
 
       const marks = allMarks ?? [];
 
-      // 4. Attendance
+      // 5. Attendance
       const sessionIds = (attendanceSessionsRes.data ?? []).map((s: any) => s.id);
       let attendanceEntries: any[] = [];
       if (sessionIds.length > 0) {
@@ -117,7 +157,7 @@ export function useStudentReportCard() {
         attendanceEntries = attData ?? [];
       }
 
-      // 5. Group assessments by subject
+      // 6. Group assessments by subject
       const assessmentsBySubject = new Map<string, any[]>();
       filteredAssessments.forEach((a: any) => {
         const key = a.subject_id || "__no_subject__";
@@ -125,14 +165,14 @@ export function useStudentReportCard() {
         assessmentsBySubject.get(key)!.push(a);
       });
 
-      // 6. Build marks lookup per student
+      // 7. Build marks lookup per student
       const marksLookup = new Map<string, Map<string, number>>();
       marks.forEach((m: any) => {
         if (!marksLookup.has(m.student_id)) marksLookup.set(m.student_id, new Map());
         if (m.marks !== null) marksLookup.get(m.student_id)!.set(m.assessment_id, m.marks);
       });
 
-      // 7. Calculate percentage for each student (for ranking)
+      // 8. Calculate percentage for each student (for ranking)
       const studentPercentages: { studentId: string; pct: number }[] = [];
       const enrolledStudentIds = (enrollRes.data ?? []).map((e: any) => e.student_id);
 
@@ -151,8 +191,8 @@ export function useStudentReportCard() {
       studentPercentages.sort((a, b) => b.pct - a.pct);
       const rank = studentPercentages.findIndex((s) => s.studentId === studentId) + 1;
 
-      // 8. Build this student's report card
-      const studentMarks = marksLookup.get(studentId) ?? new Map();
+      // 9. Build this student's report card
+      const thisStudentMarks = marksLookup.get(studentId) ?? new Map();
       const subjectResults: ReportCardSubjectResult[] = [];
 
       assessmentsBySubject.forEach((subjectAssessments, subjectKey) => {
@@ -161,7 +201,7 @@ export function useStudentReportCard() {
         const assessmentDetails: { title: string; marks: number | null; maxMarks: number }[] = [];
 
         subjectAssessments.forEach((a: any) => {
-          const m = studentMarks.get(a.id) ?? null;
+          const m = thisStudentMarks.get(a.id) ?? null;
           assessmentDetails.push({ title: a.title, marks: m, maxMarks: a.max_marks });
           totalMax += a.max_marks;
           if (m !== null) totalObtained += m;
@@ -215,6 +255,7 @@ export function useStudentReportCard() {
       setReportCard(card);
       toast.success("Report card generated");
     } catch (err: any) {
+      console.error("Report card generation error:", err);
       toast.error(err.message ?? "Failed to generate report card");
     } finally {
       setLoading(false);
