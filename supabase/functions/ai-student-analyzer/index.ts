@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -18,7 +18,17 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "AI service is not configured. Please contact your administrator." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!studentId || !schoolId) {
+      return new Response(
+        JSON.stringify({ error: "Missing required parameters: studentId and schoolId" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -55,6 +65,13 @@ serve(async (req) => {
     ]);
 
     const student = studentRes.data;
+    if (!student) {
+      return new Response(
+        JSON.stringify({ error: "Student not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const attendance = attendanceRes.data || [];
     const marks = marksRes.data || [];
     const behavior = behaviorRes.data || [];
@@ -92,7 +109,7 @@ Student Analysis Data:
 - Positive Behavior Notes: ${positiveBehavior}
 - Negative Behavior Notes: ${negativeBehavior}
 - Total Assessments Taken: ${marks.length}
-- Recent Behavior: ${behavior.slice(0, 3).map(b => b.content).join("; ")}
+- Recent Behavior: ${behavior.slice(0, 3).map(b => b.content).join("; ") || "No behavior notes"}
 `;
 
     const systemPrompt = `You are an AI education analyst creating a digital twin profile for a student. Analyze the provided data and return a JSON object with the following structure:
@@ -143,9 +160,24 @@ Be data-driven but also consider the whole picture. Return ONLY valid JSON.`;
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      return new Response(
+        JSON.stringify({ error: "AI service temporarily unavailable. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiResponse = await response.json();
@@ -154,17 +186,17 @@ Be data-driven but also consider the whole picture. Return ONLY valid JSON.`;
     // Parse JSON from response
     let analysis;
     try {
-      // Extract JSON from potential markdown code blocks
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : content;
       analysis = JSON.parse(jsonStr.trim());
     } catch {
-      analysis = { error: "Failed to parse AI response", raw: content };
+      console.error("Failed to parse AI response:", content);
+      analysis = { error: "Failed to parse AI response" };
     }
 
     // Upsert to ai_student_profiles
     if (analysis && !analysis.error) {
-      await supabase.from("ai_student_profiles").upsert({
+      const { error: upsertError } = await supabase.from("ai_student_profiles").upsert({
         school_id: schoolId,
         student_id: studentId,
         learning_style: analysis.learning_style || "unknown",
@@ -185,6 +217,10 @@ Be data-driven but also consider the whole picture. Return ONLY valid JSON.`;
         emotional_trend: analysis.emotional_trend || "stable",
         last_analyzed_at: new Date().toISOString(),
       }, { onConflict: "school_id,student_id" });
+
+      if (upsertError) {
+        console.error("Upsert error:", upsertError);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, analysis }), {
@@ -193,7 +229,7 @@ Be data-driven but also consider the whole picture. Return ONLY valid JSON.`;
   } catch (e) {
     console.error("ai-student-analyzer error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

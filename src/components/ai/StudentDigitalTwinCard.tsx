@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -15,6 +15,7 @@ import {
   Hand,
   Lightbulb,
   Target,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Props {
   studentId: string;
@@ -47,6 +49,8 @@ const learningStyleColors = {
 
 export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }: Props) {
   const qc = useQueryClient();
+  const [generating, setGenerating] = useState(false);
+
   const { data: profile, isLoading } = useQuery({
     queryKey: ["ai_student_profile", studentId],
     queryFn: async () => {
@@ -77,6 +81,40 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
     },
     enabled: !!studentId,
   });
+
+  const handleGenerateProfile = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-student-analyzer", {
+        body: { schoolId, studentId, analysisType: "digital_twin" },
+      });
+
+      if (error) {
+        console.error("AI function error:", error);
+        toast.error("Failed to generate AI profile: " + (error.message || "Unknown error"));
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success("AI profile generated successfully!");
+      qc.invalidateQueries({ queryKey: ["ai_student_profile", studentId] });
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      if (err?.status === 429) {
+        toast.error("Rate limit exceeded. Please try again in a moment.");
+      } else if (err?.status === 402) {
+        toast.error("AI credits exhausted. Please add credits to continue.");
+      } else {
+        toast.error("Failed to generate AI profile. Please try again.");
+      }
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const riskLevel = useMemo(() => {
     if (!profile?.risk_score) return { level: "low", color: "text-emerald-600 bg-emerald-500/10" };
@@ -118,23 +156,23 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
             AI profile not yet generated for this student
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Profile will be created as data is collected
+            Click below to analyze student data and generate insights
           </p>
           <div className="mt-4">
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => {
-                try {
-                  await supabase.functions.invoke("ai-student-analyzer", {
-                    body: { schoolId, studentId, analysisType: "digital_twin" },
-                  });
-                } finally {
-                  qc.invalidateQueries({ queryKey: ["ai_student_profile", studentId] });
-                }
-              }}
+              onClick={handleGenerateProfile}
+              disabled={generating}
             >
-              Generate AI Profile
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                "Generate AI Profile"
+              )}
             </Button>
           </div>
         </CardContent>
@@ -193,9 +231,20 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
                 </p>
               </div>
             </div>
-            <Badge className={riskLevel.color}>
-              Risk: {riskLevel.level}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleGenerateProfile}
+                disabled={generating}
+                title="Refresh AI Profile"
+              >
+                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+              </Button>
+              <Badge className={riskLevel.color}>
+                Risk: {riskLevel.level}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
 
@@ -222,7 +271,7 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
                 )}
               </div>
 
-              <div className="rounded-xl bg-surface-2 p-3">
+              <div className="rounded-xl bg-muted/50 p-3">
                 <div className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-primary" />
                   <span className="text-xs font-medium">Learning Speed</span>
@@ -310,7 +359,7 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
               Wellbeing Analysis
             </h4>
             <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-xl bg-surface-2 p-3 text-center">
+              <div className="rounded-xl bg-muted/50 p-3 text-center">
                 <EmotionalIcon className={`mx-auto h-5 w-5 ${
                   profile.emotional_trend === "positive" || profile.emotional_trend === "improving"
                     ? "text-emerald-500"
@@ -324,7 +373,7 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
                 </p>
               </div>
 
-              <div className="rounded-xl bg-surface-2 p-3 text-center">
+              <div className="rounded-xl bg-muted/50 p-3 text-center">
                 <Target className={`mx-auto h-5 w-5 ${
                   (profile.burnout_probability || 0) > 60 ? "text-red-500" : "text-emerald-500"
                 }`} />
@@ -334,7 +383,7 @@ export function StudentDigitalTwinCard({ studentId, schoolId, compact = false }:
                 </p>
               </div>
 
-              <div className="rounded-xl bg-surface-2 p-3 text-center">
+              <div className="rounded-xl bg-muted/50 p-3 text-center">
                 <AlertTriangle className={`mx-auto h-5 w-5 ${
                   (profile.dropout_risk || 0) > 40 ? "text-red-500" : "text-emerald-500"
                 }`} />
