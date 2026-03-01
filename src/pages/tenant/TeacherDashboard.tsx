@@ -26,11 +26,14 @@ import { TeacherProgressModule } from "@/pages/tenant/teacher-modules/TeacherPro
 import { TeacherLessonPlannerModule } from "@/pages/tenant/teacher-modules/TeacherLessonPlannerModule";
 import { TeacherLeavesModule } from "@/pages/tenant/teacher-modules/TeacherLeavesModule";
 import { TeacherAIModule } from "@/pages/tenant/teacher-modules/TeacherAIModule";
+import { TeacherStudentManagement } from "@/pages/tenant/teacher-modules/TeacherStudentManagement";
+import { DiaryModule } from "@/pages/tenant/modules/DiaryModule";
+import { HolidaysModule } from "@/pages/tenant/modules/HolidaysModule";
+import { NoticeBoardModule } from "@/pages/tenant/modules/NoticeBoardModule";
+import { ExamModule } from "@/pages/tenant/modules/ExamModule";
 
 const TeacherDashboard = () => {
   const { schoolSlug } = useParams();
-  
-  // Use optimized hooks with caching
   const tenant = useTenantOptimized(schoolSlug);
   const { user, loading } = useSession();
   const navigate = useNavigate();
@@ -40,7 +43,6 @@ const TeacherDashboard = () => {
     [tenant.status, tenant.schoolId]
   );
 
-  // Use optimized authorization hook
   const authz = useAuthz({
     schoolId,
     userId: user?.id ?? null,
@@ -49,14 +51,12 @@ const TeacherDashboard = () => {
   const authzState = authz.state;
   const authzMessage = authz.message;
 
-  // Universal background data prefetch for offline use
   useUniversalPrefetch({
     schoolId,
     userId: user?.id ?? null,
     enabled: !!schoolId && !!user && authzState === 'ok',
   });
 
-  // Don't show loading screen if we have cached session data
   if (loading && !user) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -83,52 +83,33 @@ const TeacherDashboard = () => {
               <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="soft"
-                size="sm"
-                onClick={() => navigate(`/${tenant.slug}/auth`)}
-              >
+              <Button variant="soft" size="sm" onClick={() => navigate(`/${tenant.slug}/auth`)}>
                 <UserRound className="mr-2 h-4 w-4" /> Switch role
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  navigate(`/${tenant.slug}/auth`);
-                }}
-              >
+              <Button variant="outline" size="sm" onClick={async () => { await supabase.auth.signOut(); navigate(`/${tenant.slug}/auth`); }}>
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Access check - only show if denied (not while checking with cache) */}
         {authzState === "denied" && (
           <div className="rounded-2xl bg-destructive/10 p-4 text-sm">
             <p className="font-medium text-destructive">Access Denied</p>
             <p className="mt-1">{authzMessage ?? "You do not have access to this area."}</p>
             <div className="mt-3">
-              <Button
-                variant="hero"
-                size="sm"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  navigate(`/${tenant.slug}/auth`);
-                }}
-              >
+              <Button variant="hero" size="sm" onClick={async () => { await supabase.auth.signOut(); navigate(`/${tenant.slug}/auth`); }}>
                 Return to login
               </Button>
             </div>
           </div>
         )}
 
-        {/* Routes - show if OK or checking (with cached auth) */}
         {authzState !== "denied" && (
           <Routes>
             <Route index element={<TeacherHome />} />
             <Route path="students" element={<TeacherStudentsModule />} />
+            <Route path="student-management" element={<TeacherStudentManagement />} />
             <Route path="attendance" element={<TeacherAttendanceModule />} />
             <Route path="homework" element={<TeacherHomeworkModule />} />
             <Route path="assignments" element={<TeacherAssignmentsModule />} />
@@ -140,6 +121,10 @@ const TeacherDashboard = () => {
             <Route path="timetable" element={<TeacherTimetableModule />} />
             <Route path="leaves" element={<TeacherLeavesModule />} />
             <Route path="ai-insights" element={<TeacherAIModule />} />
+            <Route path="diary" element={<DiaryModule schoolId={schoolId} role="teacher" />} />
+            <Route path="holidays" element={<HolidaysModule schoolId={schoolId} />} />
+            <Route path="notice-board" element={<NoticeBoardModule schoolId={schoolId} canManage={true} />} />
+            <Route path="exams" element={<ExamModule schoolId={schoolId} canManage={true} />} />
             <Route path="messages" element={<TeacherWorkspaceMessagesModule />} />
             <Route path="admin-inbox" element={<TeacherAdminInboxModule />} />
             <Route path="*" element={<Navigate to={`/${tenant.slug}/teacher`} replace />} />

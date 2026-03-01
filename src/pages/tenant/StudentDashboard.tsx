@@ -16,6 +16,11 @@ import { StudentCertificatesModule } from "@/pages/tenant/student-modules/Studen
 import { StudentSupportModule } from "@/pages/tenant/student-modules/StudentSupportModule";
 import { StudentMessagesModule } from "@/pages/tenant/student-modules/StudentMessagesModule";
 import { StudentAIModule } from "@/pages/tenant/student-modules/StudentAIModule";
+import { DiaryViewModule } from "@/pages/tenant/modules/DiaryViewModule";
+import { HolidaysModule } from "@/pages/tenant/modules/HolidaysModule";
+import { NoticeBoardModule } from "@/pages/tenant/modules/NoticeBoardModule";
+import { ExamModule } from "@/pages/tenant/modules/ExamModule";
+import { FeeSlipModule } from "@/pages/tenant/modules/FeeSlipModule";
 
 // Cache key for student auth
 const STUDENT_AUTHZ_CACHE = "eduverse_student_authz_cache";
@@ -27,33 +32,25 @@ interface CachedStudentAuthz {
   timestamp: number;
 }
 
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
 
 function getCachedStudentAuthz(schoolId: string, userId: string): boolean | null {
   try {
     const cached = localStorage.getItem(STUDENT_AUTHZ_CACHE);
     if (!cached) return null;
     const data: CachedStudentAuthz = JSON.parse(cached);
-    if (
-      data.schoolId === schoolId &&
-      data.userId === userId &&
-      Date.now() - data.timestamp < CACHE_DURATION
-    ) {
+    if (data.schoolId === schoolId && data.userId === userId && Date.now() - data.timestamp < CACHE_DURATION) {
       return data.authorized;
     }
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function setCachedStudentAuthz(schoolId: string, userId: string, authorized: boolean) {
   try {
     const data: CachedStudentAuthz = { schoolId, userId, authorized, timestamp: Date.now() };
     localStorage.setItem(STUDENT_AUTHZ_CACHE, JSON.stringify(data));
-  } catch {
-    // Ignore
-  }
+  } catch { }
 }
 
 const StudentDashboard = () => {
@@ -66,23 +63,18 @@ const StudentDashboard = () => {
   const schoolId = tenant.status === "ready" ? tenant.schoolId : null;
   const myStudent = useMyStudentId(schoolId);
 
-  // Universal prefetch for offline support
   useUniversalPrefetch({
     schoolId,
     userId: user?.id ?? null,
     enabled: !!schoolId && !!user && authzState === 'ok',
   });
 
-  // Monitor online status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
+    return () => { window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
   }, []);
 
   useEffect(() => {
@@ -91,114 +83,46 @@ const StudentDashboard = () => {
 
     const schoolIdVal = tenant.schoolId;
     const userId = user.id;
-
-    // Check cache first
     const cachedAuth = getCachedStudentAuthz(schoolIdVal, userId);
     
-    // If offline and we have cache, use it immediately
-    if (!navigator.onLine && cachedAuth !== null) {
-      setAuthzState(cachedAuth ? "ok" : "denied");
-      return;
-    }
-
-    // If we have valid cache, use it while we verify in background
-    if (cachedAuth === true) {
-      setAuthzState("ok");
-      // Only verify in background if online
-      if (!navigator.onLine) return;
-    } else {
-      setAuthzState("checking");
-    }
-
-    // Skip network check if offline
-    if (!navigator.onLine) {
-      if (cachedAuth !== null) {
-        setAuthzState(cachedAuth ? "ok" : "denied");
-      }
-      return;
-    }
+    if (!navigator.onLine && cachedAuth !== null) { setAuthzState(cachedAuth ? "ok" : "denied"); return; }
+    if (cachedAuth === true) { setAuthzState("ok"); if (!navigator.onLine) return; } else { setAuthzState("checking"); }
+    if (!navigator.onLine) { if (cachedAuth !== null) setAuthzState(cachedAuth ? "ok" : "denied"); return; }
 
     let cancelled = false;
-
     (async () => {
       try {
-        const { data: psa } = await supabase
-          .from("platform_super_admins")
-          .select("user_id")
-          .eq("user_id", userId)
-          .maybeSingle();
+        const { data: psa } = await supabase.from("platform_super_admins").select("user_id").eq("user_id", userId).maybeSingle();
         if (cancelled) return;
-        if (psa?.user_id) {
-          setAuthzState("ok");
-          setCachedStudentAuthz(schoolIdVal, userId, true);
-          return;
-        }
-
-        const { data: roleRow } = await supabase
-          .from("user_roles")
-          .select("id")
-          .eq("school_id", schoolIdVal)
-          .eq("user_id", userId)
-          .eq("role", "student")
-          .maybeSingle();
+        if (psa?.user_id) { setAuthzState("ok"); setCachedStudentAuthz(schoolIdVal, userId, true); return; }
+        const { data: roleRow } = await supabase.from("user_roles").select("id").eq("school_id", schoolIdVal).eq("user_id", userId).eq("role", "student").maybeSingle();
         if (cancelled) return;
         const authorized = !!roleRow;
         setAuthzState(authorized ? "ok" : "denied");
         setCachedStudentAuthz(schoolIdVal, userId, authorized);
-      } catch {
-        // On network error, use cache if available
-        if (cachedAuth !== null) {
-          setAuthzState(cachedAuth ? "ok" : "denied");
-        }
-      }
+      } catch { if (cachedAuth !== null) setAuthzState(cachedAuth ? "ok" : "denied"); }
     })();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [tenant.status, tenant.schoolId, user, isOnline]);
 
-  // Don't show loading if we have cached user
   if (loading && !user) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="rounded-3xl bg-surface p-6 shadow-elevated">
-          <p className="text-sm text-muted-foreground">Loading session…</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-background p-8"><div className="rounded-3xl bg-surface p-6 shadow-elevated"><p className="text-sm text-muted-foreground">Loading session…</p></div></div>;
   }
 
   if (!user) return <Navigate to={`/${tenant.slug}/auth`} replace />;
 
   if (authzState === "denied") {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="rounded-3xl bg-surface p-6 shadow-elevated">
-          <p className="font-display text-xl font-semibold tracking-tight">Access Denied</p>
-          <p className="mt-2 text-sm text-muted-foreground">You do not have Student access.</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-background p-8"><div className="rounded-3xl bg-surface p-6 shadow-elevated"><p className="font-display text-xl font-semibold tracking-tight">Access Denied</p><p className="mt-2 text-sm text-muted-foreground">You do not have Student access.</p></div></div>;
   }
 
-  // If the account is authorized as a student but not linked to an actual student record,
-  // show a clear blocking message for all tabs (otherwise every module looks "empty").
   if (myStudent.status === "error") {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="rounded-3xl bg-surface p-6 shadow-elevated">
-          <p className="font-display text-xl font-semibold tracking-tight">Account Not Linked</p>
-          <p className="mt-2 text-sm text-muted-foreground">{myStudent.error}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Ask your school administration to link your student profile to this login.
-          </p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-background p-8"><div className="rounded-3xl bg-surface p-6 shadow-elevated"><p className="font-display text-xl font-semibold tracking-tight">Account Not Linked</p><p className="mt-2 text-sm text-muted-foreground">{myStudent.error}</p><p className="mt-1 text-xs text-muted-foreground">Ask your school administration to link your student profile to this login.</p></div></div>;
   }
 
   const title = `${tenant.school?.name || "EDUVERSE"} • Student`;
+
+  // Get student's section for diary filtering
+  const studentSectionId = myStudent.status === "ready" ? (myStudent as any).sectionId || null : null;
 
   return (
     <StudentShell title={title} subtitle="Read-only student portal" schoolSlug={tenant.slug}>
@@ -210,6 +134,11 @@ const StudentDashboard = () => {
         <Route path="assignments" element={<StudentAssignmentsModule myStudent={myStudent} schoolId={schoolId} />} />
         <Route path="certificates" element={<StudentCertificatesModule myStudent={myStudent} schoolId={schoolId} />} />
         <Route path="ai-insights" element={<StudentAIModule myStudent={myStudent} schoolId={schoolId} />} />
+        <Route path="diary" element={<DiaryViewModule schoolId={schoolId} studentId={myStudent.studentId} sectionId={studentSectionId} role="student" />} />
+        <Route path="holidays" element={<HolidaysModule schoolId={schoolId} />} />
+        <Route path="notice-board" element={<NoticeBoardModule schoolId={schoolId} targetAudience="students" />} />
+        <Route path="exams" element={<ExamModule schoolId={schoolId} />} />
+        <Route path="fee-slips" element={<FeeSlipModule schoolId={schoolId} studentId={myStudent.studentId} />} />
         <Route path="messages" element={<StudentMessagesModule />} />
         <Route path="support" element={<StudentSupportModule myStudent={myStudent} schoolId={schoolId} />} />
         <Route path="*" element={<Navigate to={`/${tenant.slug}/student`} replace />} />

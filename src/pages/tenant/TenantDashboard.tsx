@@ -28,6 +28,11 @@ import { DirectoryModule } from "@/pages/tenant/modules/DirectoryModule";
 import { TimetableBuilderModule } from "@/pages/tenant/modules/TimetableBuilderModule";
 import { MessagesModule } from "@/pages/tenant/modules/MessagesModule";
 import { HrLeavesModule } from "@/pages/tenant/hr-modules/HrLeavesModule";
+import { DiaryModule } from "@/pages/tenant/modules/DiaryModule";
+import { HolidaysModule } from "@/pages/tenant/modules/HolidaysModule";
+import { NoticeBoardModule } from "@/pages/tenant/modules/NoticeBoardModule";
+import { ExamModule } from "@/pages/tenant/modules/ExamModule";
+import { FeeSlipModule } from "@/pages/tenant/modules/FeeSlipModule";
 
 const TenantDashboard = () => {
   const { schoolSlug, role: roleParam } = useParams();
@@ -445,6 +450,11 @@ const TenantDashboard = () => {
             <Route path="finance" element={<FinanceModule />} />
             <Route path="reports" element={<ReportsModule />} />
             <Route path="leaves" element={<HrLeavesModule />} />
+            <Route path="diary" element={<DiaryModule schoolId={tenant.schoolId} role={role === "principal" || role === "vice_principal" ? "principal" : "admin"} />} />
+            <Route path="holidays" element={<HolidaysModule schoolId={tenant.schoolId} canManage={role === "principal" || role === "vice_principal"} />} />
+            <Route path="notice-board" element={<NoticeBoardModule schoolId={tenant.schoolId} canManage={role === "principal" || role === "vice_principal"} />} />
+            <Route path="exams" element={<ExamModule schoolId={tenant.schoolId} canManage={role === "principal" || role === "vice_principal"} />} />
+            <Route path="fee-slips" element={<FeeSlipModule schoolId={tenant.schoolId} canManage={["principal", "vice_principal", "accountant", "hr_manager"].includes(role || "")} />} />
             <Route path="support" element={<SupportModule schoolId={tenant.schoolId} />} />
             <Route path="*" element={<Navigate to={`/${tenant.slug}/${role}`} replace />} />
           </Routes>

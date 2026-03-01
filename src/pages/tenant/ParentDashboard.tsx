@@ -16,6 +16,11 @@ import ParentTimetableModule from "./parent-modules/ParentTimetableModule";
 import ParentNotificationsModule from "./parent-modules/ParentNotificationsModule";
 import ParentSupportModule from "./parent-modules/ParentSupportModule";
 import ParentAIModule from "./parent-modules/ParentAIModule";
+import { DiaryViewModule } from "./modules/DiaryViewModule";
+import { HolidaysModule } from "./modules/HolidaysModule";
+import { NoticeBoardModule } from "./modules/NoticeBoardModule";
+import { ExamModule } from "./modules/ExamModule";
+import { FeeSlipModule } from "./modules/FeeSlipModule";
 
 // Cache key for parent auth
 const PARENT_AUTHZ_CACHE = "eduverse_parent_authz_cache";
@@ -254,6 +259,11 @@ const ParentDashboard = () => {
         <Route path="messages" element={<ParentMessagesModule child={selectedChild} schoolId={schoolId} />} />
         <Route path="timetable" element={<ParentTimetableModule child={selectedChild} schoolId={schoolId} />} />
         <Route path="notifications" element={<ParentNotificationsModule child={selectedChild} schoolId={schoolId} />} />
+        <Route path="diary" element={<DiaryViewModule schoolId={schoolId} studentId={selectedChild?.student_id} sectionId={null} role="parent" />} />
+        <Route path="holidays" element={<HolidaysModule schoolId={schoolId} />} />
+        <Route path="notice-board" element={<NoticeBoardModule schoolId={schoolId} targetAudience="parents" />} />
+        <Route path="exams" element={<ExamModule schoolId={schoolId} />} />
+        <Route path="fee-slips" element={<FeeSlipModule schoolId={schoolId} studentId={selectedChild?.student_id} />} />
         <Route path="support" element={<ParentSupportModule child={selectedChild} schoolId={schoolId} />} />
         <Route path="*" element={<Navigate to="" replace />} />
       </Routes>

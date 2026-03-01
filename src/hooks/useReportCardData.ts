@@ -87,8 +87,26 @@ export function useReportCardData(): UseReportCardDataReturn {
         : assessments;
 
       if (filteredAssessments.length === 0) {
-        toast.error("No published assessments found" + (termLabel ? ` for term "${termLabel}"` : ""));
-        return;
+        // Try without is_published filter (some schools may not use publish workflow)
+        const { data: allAssessments } = await supabase
+          .from("academic_assessments")
+          .select("id, title, max_marks, subject_id, term_label, is_published")
+          .eq("school_id", schoolId)
+          .eq("class_section_id", sectionId)
+          .limit(500);
+        
+        const fallbackAssessments = termLabel
+          ? (allAssessments || []).filter((a: any) => a.term_label === termLabel)
+          : (allAssessments || []);
+        
+        if (fallbackAssessments.length === 0) {
+          toast.error("No assessments found" + (termLabel ? ` for term "${termLabel}"` : "") + ". Please create assessments first.");
+          return;
+        }
+        
+        // Use all assessments (published or not) as fallback
+        toast.info("Using all assessments (including unpublished) since no published assessments were found.");
+        filteredAssessments.push(...fallbackAssessments);
       }
 
       // Get class/section names

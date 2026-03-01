@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Users, AlertTriangle, TrendingUp } from "lucide-react";
 import { TeacherPerformanceAnalyzer } from "@/components/ai/TeacherPerformanceAnalyzer";
 import { EarlyWarningSystem } from "@/components/ai/EarlyWarningSystem";
+import { AIErrorBoundary } from "@/components/ai/AIErrorBoundary";
+import { BatchAIProfileGenerator } from "@/components/ai/BatchAIProfileGenerator";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -82,50 +84,34 @@ export function TeacherAIModule() {
         </TabsList>
 
         <TabsContent value="performance">
-          <TeacherPerformanceAnalyzer schoolId={schoolId} />
+          <AIErrorBoundary>
+            <TeacherPerformanceAnalyzer schoolId={schoolId} />
+          </AIErrorBoundary>
         </TabsContent>
 
         <TabsContent value="warnings">
-          <EarlyWarningSystem schoolId={schoolId} />
+          <AIErrorBoundary>
+            <EarlyWarningSystem schoolId={schoolId} />
+          </AIErrorBoundary>
         </TabsContent>
 
         <TabsContent value="insights">
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center space-y-4">
-                <Brain className="h-12 w-12 mx-auto text-primary opacity-50" />
-                <div>
-                  <h3 className="font-medium">AI Teaching Recommendations</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Based on your class performance and student data, AI generates personalized teaching suggestions.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="rounded-lg border p-4">
-                    <Users className="h-6 w-6 text-primary mx-auto" />
-                    <p className="font-medium mt-2">Student Engagement</p>
-                    <p className="text-sm text-muted-foreground">
-                      Track how students respond to different teaching methods
-                    </p>
-                  </div>
-                  <div className="rounded-lg border p-4">
-                    <TrendingUp className="h-6 w-6 text-primary mx-auto" />
-                    <p className="font-medium mt-2">Performance Trends</p>
-                    <p className="text-sm text-muted-foreground">
-                      Monitor class progress over time with AI analysis
-                    </p>
-                  </div>
-                  <div className="rounded-lg border p-4">
-                    <AlertTriangle className="h-6 w-6 text-warning mx-auto" />
-                    <p className="font-medium mt-2">Early Intervention</p>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified before students fall behind
+          <div className="space-y-6">
+            <BatchAIProfileGenerator schoolId={schoolId} />
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center space-y-4">
+                  <Brain className="h-12 w-12 mx-auto text-primary opacity-50" />
+                  <div>
+                    <h3 className="font-medium">AI Teaching Recommendations</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Based on your class performance and student data, AI generates personalized teaching suggestions.
                     </p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
