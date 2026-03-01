@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { BookOpen, CalendarDays, GraduationCap, Headphones, LayoutGrid, ScrollText, MessageSquare, Sparkles, Menu, LogOut, Brain } from "lucide-react";
+import { BookOpen, CalendarDays, GraduationCap, Headphones, LayoutGrid, ScrollText, MessageSquare, Sparkles, Menu, LogOut, Brain, Megaphone, Sun, FileText, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalCommandPalette } from "@/components/global/GlobalCommandPalette";
 import { NotificationsBell } from "@/components/global/NotificationsBell";
@@ -51,6 +51,11 @@ export function StudentShell({ title, subtitle, schoolSlug, children }: Props) {
     { to: `${basePath}/grades`, icon: BookOpen, label: "Grades", badge: 0 },
     { to: `${basePath}/timetable`, icon: ScrollText, label: "Timetable", badge: 0 },
     { to: `${basePath}/assignments`, icon: ScrollText, label: "Assignments", badge: 0 },
+    { to: `${basePath}/exams`, icon: FileText, label: "Exams", badge: 0 },
+    { to: `${basePath}/diary`, icon: BookOpen, label: "Diary", badge: 0 },
+    { to: `${basePath}/notice-board`, icon: Megaphone, label: "Notices", badge: 0 },
+    { to: `${basePath}/holidays`, icon: Sun, label: "Holidays", badge: 0 },
+    { to: `${basePath}/fee-slips`, icon: Receipt, label: "Fee Slips", badge: 0 },
     { to: `${basePath}/certificates`, icon: GraduationCap, label: "Certificates", badge: 0 },
     { to: `${basePath}/messages`, icon: MessageSquare, label: "Messages", badge: unreadCount },
     { to: `${basePath}/support`, icon: Headphones, label: "Support", badge: 0 },

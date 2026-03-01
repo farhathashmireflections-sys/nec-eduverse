@@ -17,6 +17,10 @@ import {
   Sparkles,
   Menu,
   Brain,
+  BookOpen,
+  Megaphone,
+  Sun,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,6 +85,11 @@ export function ParentShell({
     { to: `${basePath}/attendance`, icon: Calendar, label: "Attendance", badge: 0 },
     { to: `${basePath}/grades`, icon: GraduationCap, label: "Grades", badge: 0 },
     { to: `${basePath}/fees`, icon: Receipt, label: "Fees", badge: 0 },
+    { to: `${basePath}/diary`, icon: BookOpen, label: "Diary", badge: 0 },
+    { to: `${basePath}/notice-board`, icon: Megaphone, label: "Notices", badge: 0 },
+    { to: `${basePath}/holidays`, icon: Sun, label: "Holidays", badge: 0 },
+    { to: `${basePath}/exams`, icon: FileText, label: "Exams", badge: 0 },
+    { to: `${basePath}/fee-slips`, icon: Receipt, label: "Fee Slips", badge: 0 },
     { to: `${basePath}/messages`, icon: MessageSquare, label: "Messages", badge: unreadCount },
     { to: `${basePath}/timetable`, icon: Clock, label: "Timetable", badge: 0 },
     { to: `${basePath}/notifications`, icon: Bell, label: "Notifications", badge: 0 },

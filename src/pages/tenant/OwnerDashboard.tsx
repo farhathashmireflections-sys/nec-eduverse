@@ -21,6 +21,11 @@ import { OwnerSupportModule } from "@/pages/tenant/owner-modules/OwnerSupportMod
 import { OwnerAdvisorModule } from "@/pages/tenant/owner-modules/OwnerAdvisorModule";
 import { OwnerAIModule } from "@/pages/tenant/owner-modules/OwnerAIModule";
 import { MessagesModule } from "@/pages/tenant/modules/MessagesModule";
+import { DiaryModule } from "@/pages/tenant/modules/DiaryModule";
+import { HolidaysModule } from "@/pages/tenant/modules/HolidaysModule";
+import { NoticeBoardModule } from "@/pages/tenant/modules/NoticeBoardModule";
+import { ExamModule } from "@/pages/tenant/modules/ExamModule";
+import { FeeSlipModule } from "@/pages/tenant/modules/FeeSlipModule";
 
 // Cache key for owner auth
 const OWNER_AUTHZ_CACHE = "eduverse_owner_authz_cache";
@@ -229,6 +234,11 @@ export default function OwnerDashboard() {
           <Route path="support" element={<OwnerSupportModule schoolId={schoolId} />} />
           <Route path="advisor" element={<OwnerAdvisorModule schoolId={schoolId} />} />
           <Route path="ai" element={<OwnerAIModule schoolId={schoolId} />} />
+          <Route path="diary" element={<DiaryModule schoolId={schoolId} role="principal" />} />
+          <Route path="holidays" element={<HolidaysModule schoolId={schoolId} canManage={true} />} />
+          <Route path="notice-board" element={<NoticeBoardModule schoolId={schoolId} canManage={true} />} />
+          <Route path="exams" element={<ExamModule schoolId={schoolId} canManage={true} />} />
+          <Route path="fee-slips" element={<FeeSlipModule schoolId={schoolId} canManage={true} />} />
           <Route path="messages" element={<MessagesModule schoolId={schoolId} />} />
         </Routes>
       )}

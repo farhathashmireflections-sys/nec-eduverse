@@ -7,6 +7,7 @@ import {
   TeacherPerformanceAnalyzer,
   AICounselorMode,
 } from "@/components/ai";
+import { AIErrorBoundary } from "@/components/ai/AIErrorBoundary";
 import { Brain, Shield, Award, Calendar, Heart, BarChart3 } from "lucide-react";
 
 interface Props {
@@ -48,27 +49,39 @@ export function OwnerAIModule({ schoolId }: Props) {
       </TabsList>
 
       <TabsContent value="overview">
-        <AICommandCenter schoolId={schoolId} />
+        <AIErrorBoundary fallbackMessage="AI Command Center encountered an error. The AI tables may not have data yet.">
+          <AICommandCenter schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
 
       <TabsContent value="warnings">
-        <EarlyWarningSystem schoolId={schoolId} />
+        <AIErrorBoundary>
+          <EarlyWarningSystem schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
 
       <TabsContent value="reputation">
-        <SchoolReputationDashboard schoolId={schoolId} />
+        <AIErrorBoundary>
+          <SchoolReputationDashboard schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
 
       <TabsContent value="teachers">
-        <TeacherPerformanceAnalyzer schoolId={schoolId} />
+        <AIErrorBoundary>
+          <TeacherPerformanceAnalyzer schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
 
       <TabsContent value="timetable">
-        <SmartTimetableGenerator schoolId={schoolId} />
+        <AIErrorBoundary>
+          <SmartTimetableGenerator schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
 
       <TabsContent value="counseling">
-        <AICounselorMode schoolId={schoolId} />
+        <AIErrorBoundary>
+          <AICounselorMode schoolId={schoolId} />
+        </AIErrorBoundary>
       </TabsContent>
     </Tabs>
   );
