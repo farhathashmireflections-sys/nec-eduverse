@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_message_pins: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_message_recipients: {
         Row: {
           created_at: string
@@ -530,6 +581,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_timetable_suggestions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          school_id: string
+          status: string
+          suggestion: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          school_id: string
+          status?: string
+          suggestion?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          school_id?: string
+          status?: string
+          suggestion?: Json | null
+        }
+        Relationships: []
+      }
       app_notifications: {
         Row: {
           body: string | null
@@ -776,6 +854,33 @@ export type Database = {
         }
         Relationships: []
       }
+      class_section_subjects: {
+        Row: {
+          class_section_id: string
+          created_at: string
+          id: string
+          periods_per_week: number | null
+          school_id: string
+          subject_id: string
+        }
+        Insert: {
+          class_section_id: string
+          created_at?: string
+          id?: string
+          periods_per_week?: number | null
+          school_id: string
+          subject_id: string
+        }
+        Update: {
+          class_section_id?: string
+          created_at?: string
+          id?: string
+          periods_per_week?: number | null
+          school_id?: string
+          subject_id?: string
+        }
+        Relationships: []
+      }
       class_sections: {
         Row: {
           capacity: number | null
@@ -865,6 +970,45 @@ export type Database = {
           lead_id?: string
           outcome?: string | null
           scheduled_at?: string | null
+          school_id?: string
+        }
+        Relationships: []
+      }
+      crm_call_logs: {
+        Row: {
+          called_at: string
+          caller_user_id: string
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          outcome: string | null
+          phone: string | null
+          school_id: string
+        }
+        Insert: {
+          called_at?: string
+          caller_user_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          outcome?: string | null
+          phone?: string | null
+          school_id: string
+        }
+        Update: {
+          called_at?: string
+          caller_user_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          outcome?: string | null
+          phone?: string | null
           school_id?: string
         }
         Relationships: []
@@ -1088,6 +1232,54 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_papers: {
+        Row: {
+          class_section_id: string | null
+          created_at: string
+          created_by: string
+          duration_minutes: number | null
+          exam_date: string | null
+          exam_id: string
+          id: string
+          instructions: string | null
+          school_id: string
+          status: string
+          subject_id: string | null
+          title: string | null
+          total_marks: number | null
+        }
+        Insert: {
+          class_section_id?: string | null
+          created_at?: string
+          created_by: string
+          duration_minutes?: number | null
+          exam_date?: string | null
+          exam_id: string
+          id?: string
+          instructions?: string | null
+          school_id: string
+          status?: string
+          subject_id?: string | null
+          title?: string | null
+          total_marks?: number | null
+        }
+        Update: {
+          class_section_id?: string | null
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number | null
+          exam_date?: string | null
+          exam_id?: string
+          id?: string
+          instructions?: string | null
+          school_id?: string
+          status?: string
+          subject_id?: string | null
+          title?: string | null
+          total_marks?: number | null
+        }
+        Relationships: []
+      }
       exam_question_papers: {
         Row: {
           created_at: string
@@ -1211,6 +1403,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_plan_installments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          fee_plan_id: string
+          id: string
+          label: string
+          school_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          fee_plan_id: string
+          id?: string
+          label: string
+          school_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          fee_plan_id?: string
+          id?: string
+          label?: string
+          school_id?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       fee_plans: {
         Row: {
           created_at: string
@@ -1235,6 +1460,39 @@ export type Database = {
           is_active?: boolean
           name?: string
           school_id?: string
+        }
+        Relationships: []
+      }
+      fee_reminders: {
+        Row: {
+          created_at: string
+          fee_slip_id: string | null
+          id: string
+          reminder_type: string | null
+          school_id: string
+          sent_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          fee_slip_id?: string | null
+          id?: string
+          reminder_type?: string | null
+          school_id: string
+          sent_at?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          fee_slip_id?: string | null
+          id?: string
+          reminder_type?: string | null
+          school_id?: string
+          sent_at?: string | null
+          status?: string
+          student_id?: string
         }
         Relationships: []
       }
@@ -1487,6 +1745,48 @@ export type Database = {
         }
         Relationships: []
       }
+      homework: {
+        Row: {
+          assigned_by: string
+          class_section_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          max_marks: number | null
+          school_id: string
+          status: string
+          subject_id: string | null
+          title: string
+        }
+        Insert: {
+          assigned_by: string
+          class_section_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          max_marks?: number | null
+          school_id: string
+          status?: string
+          subject_id?: string | null
+          title: string
+        }
+        Update: {
+          assigned_by?: string
+          class_section_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          max_marks?: number | null
+          school_id?: string
+          status?: string
+          subject_id?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       homework_assignments: {
         Row: {
           assigned_by: string
@@ -1640,6 +1940,72 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_leave_requests: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          school_id: string
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          school_id: string
+          start_date: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          school_id?: string
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hr_leave_types: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_days: number | null
+          name: string
+          school_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_days?: number | null
+          name: string
+          school_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_days?: number | null
+          name?: string
+          school_id?: string
+        }
+        Relationships: []
+      }
       hr_leaves: {
         Row: {
           approved_by: string | null
@@ -1715,6 +2081,48 @@ export type Database = {
           period_start?: string
           school_id?: string
           status?: string
+        }
+        Relationships: []
+      }
+      hr_performance_reviews: {
+        Row: {
+          areas_to_improve: string | null
+          comments: string | null
+          created_at: string
+          id: string
+          rating: number | null
+          review_period: string | null
+          reviewer_id: string
+          school_id: string
+          status: string
+          strengths: string | null
+          user_id: string
+        }
+        Insert: {
+          areas_to_improve?: string | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          rating?: number | null
+          review_period?: string | null
+          reviewer_id: string
+          school_id: string
+          status?: string
+          strengths?: string | null
+          user_id: string
+        }
+        Update: {
+          areas_to_improve?: string | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          rating?: number | null
+          review_period?: string | null
+          reviewer_id?: string
+          school_id?: string
+          status?: string
+          strengths?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1796,6 +2204,111 @@ export type Database = {
         }
         Relationships: []
       }
+      hr_staff_attendance: {
+        Row: {
+          attendance_date: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string
+          id: string
+          remarks: string | null
+          school_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attendance_date?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          id?: string
+          remarks?: string | null
+          school_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attendance_date?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          id?: string
+          remarks?: string | null
+          school_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lesson_plans: {
+        Row: {
+          class_section_id: string | null
+          content: string | null
+          created_at: string
+          id: string
+          plan_date: string | null
+          school_id: string
+          status: string
+          subject_id: string | null
+          teacher_user_id: string
+          title: string
+        }
+        Insert: {
+          class_section_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          plan_date?: string | null
+          school_id: string
+          status?: string
+          subject_id?: string | null
+          teacher_user_id: string
+          title: string
+        }
+        Update: {
+          class_section_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          plan_date?: string | null
+          school_id?: string
+          status?: string
+          subject_id?: string | null
+          teacher_user_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          recipient_user_id: string | null
+          school_id: string
+          sender_user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_user_id?: string | null
+          school_id: string
+          sender_user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_user_id?: string | null
+          school_id?: string
+          sender_user_id?: string
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           audience: string
@@ -1871,6 +2384,66 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_notification_preferences: {
+        Row: {
+          category: string
+          channel: string
+          created_at: string
+          enabled: boolean
+          id: string
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      parent_student_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          parent_user_id: string
+          relationship: string | null
+          school_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_user_id: string
+          relationship?: string | null
+          school_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_user_id?: string
+          relationship?: string | null
+          school_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           key: string
@@ -1934,6 +2507,30 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_budget_targets: {
+        Row: {
+          created_at: string
+          id: string
+          month: string
+          school_id: string
+          target_amount: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: string
+          school_id: string
+          target_amount?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string
+          school_id?: string
+          target_amount?: number
+        }
+        Relationships: []
+      }
       scheduled_messages: {
         Row: {
           channel: string
@@ -1973,6 +2570,36 @@ export type Database = {
           sent_at?: string | null
           status?: string
           subject?: string | null
+        }
+        Relationships: []
+      }
+      school_alert_settings: {
+        Row: {
+          alert_type: string
+          created_at: string
+          enabled: boolean
+          id: string
+          school_id: string
+          threshold: number | null
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          school_id: string
+          threshold?: number | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          school_id?: string
+          threshold?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2083,6 +2710,7 @@ export type Database = {
           class_section_id: string | null
           created_at: string
           created_by: string
+          description: string | null
           end_date: string | null
           exam_type: string
           id: string
@@ -2100,6 +2728,7 @@ export type Database = {
           class_section_id?: string | null
           created_at?: string
           created_by: string
+          description?: string | null
           end_date?: string | null
           exam_type?: string
           id?: string
@@ -2117,6 +2746,7 @@ export type Database = {
           class_section_id?: string | null
           created_at?: string
           created_by?: string
+          description?: string | null
           end_date?: string | null
           exam_type?: string
           id?: string
@@ -2369,6 +2999,45 @@ export type Database = {
         }
         Relationships: []
       }
+      student_certificates: {
+        Row: {
+          certificate_type: string
+          created_at: string
+          file_url: string | null
+          id: string
+          issued_by: string | null
+          issued_date: string | null
+          school_id: string
+          status: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          certificate_type?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          school_id: string
+          status?: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          certificate_type?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          school_id?: string
+          status?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       student_complaints: {
         Row: {
           complaint_type: string
@@ -2444,6 +3113,45 @@ export type Database = {
         }
         Relationships: []
       }
+      student_fee_ledger: {
+        Row: {
+          balance: number
+          created_at: string
+          credit: number
+          debit: number
+          description: string | null
+          id: string
+          reference_id: string | null
+          reference_type: string | null
+          school_id: string
+          student_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          school_id: string
+          student_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          school_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       student_feedback: {
         Row: {
           category: string
@@ -2477,6 +3185,45 @@ export type Database = {
           school_id?: string
           student_id?: string
           teacher_id?: string
+        }
+        Relationships: []
+      }
+      student_guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          guardian_name: string | null
+          guardian_user_id: string | null
+          id: string
+          is_primary: boolean
+          phone: string | null
+          relationship: string | null
+          school_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          guardian_name?: string | null
+          guardian_user_id?: string | null
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          relationship?: string | null
+          school_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          guardian_name?: string | null
+          guardian_user_id?: string | null
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          relationship?: string | null
+          school_id?: string
+          student_id?: string
         }
         Relationships: []
       }
@@ -2558,6 +3305,48 @@ export type Database = {
           target_teacher_id?: string | null
           target_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      student_results: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          exam_id: string | null
+          grade: string | null
+          id: string
+          marks_obtained: number | null
+          remarks: string | null
+          school_id: string
+          student_id: string
+          subject_id: string | null
+          total_marks: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          exam_id?: string | null
+          grade?: string | null
+          id?: string
+          marks_obtained?: number | null
+          remarks?: string | null
+          school_id: string
+          student_id: string
+          subject_id?: string | null
+          total_marks?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          exam_id?: string | null
+          grade?: string | null
+          id?: string
+          marks_obtained?: number | null
+          remarks?: string | null
+          school_id?: string
+          student_id?: string
+          subject_id?: string | null
+          total_marks?: number | null
         }
         Relationships: []
       }
@@ -2747,6 +3536,48 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: string | null
+          resolved_at: string | null
+          school_id: string
+          status: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          resolved_at?: string | null
+          school_id: string
+          status?: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          resolved_at?: string | null
+          school_id?: string
+          status?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       teacher_assignments: {
         Row: {
           class_section_id: string
@@ -2885,6 +3716,39 @@ export type Database = {
           subject_id?: string | null
           subject_name?: string | null
           teacher_user_id?: string | null
+        }
+        Relationships: []
+      }
+      timetable_period_logs: {
+        Row: {
+          created_at: string
+          id: string
+          logged_at: string
+          notes: string | null
+          school_id: string
+          status: string
+          teacher_user_id: string | null
+          timetable_entry_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          school_id: string
+          status?: string
+          teacher_user_id?: string | null
+          timetable_entry_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          school_id?: string
+          status?: string
+          teacher_user_id?: string | null
+          timetable_entry_id?: string | null
         }
         Relationships: []
       }
