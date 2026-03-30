@@ -82,13 +82,13 @@ export function UsersModule() {
     const { data: profiles } = userIds.length > 0
       ? await supabase
           .from("profiles")
-          .select("user_id, phone")
-          .in("user_id", userIds)
+          .select("id, phone")
+          .in("id", userIds)
       : { data: [] };
 
     const phoneByUser: Record<string, string | null> = {};
     (profiles ?? []).forEach((p: any) => {
-      phoneByUser[p.user_id] = p.phone;
+      phoneByUser[p.id] = p.phone;
     });
 
     setDirectory(
