@@ -73,7 +73,7 @@ SUBJECTS (${subjects.length}):
 ${subjects.map((s: any) => `- ${s.name} (${s.periods_per_week || 5} periods/week)`).join("\n")}
 
 TEACHERS (${teachers.length}):
-${teachers.map((t: any) => `- ${t.profiles?.display_name || t.user_id} [${t.user_id}]`).join("\n")}
+${teachers.map((t: any) => `- ${t.profiles?.full_name || t.user_id} [${t.user_id}]`).join("\n")}
 
 PERIODS PER DAY (${periods.length}):
 ${periods.map((p: any) => `- ${p.label}: ${p.start_time} - ${p.end_time}${p.is_break ? " (BREAK)" : ""}`).join("\n")}
