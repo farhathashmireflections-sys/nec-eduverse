@@ -41,7 +41,7 @@ serve(async (req) => {
       supabase.from("subjects").select("id, name, periods_per_week").eq("school_id", schoolId),
       supabase
         .from("user_roles")
-        .select("user_id, profiles(display_name)")
+        .select("user_id, profiles(full_name)")
         .eq("school_id", schoolId)
         .eq("role", "teacher"),
       supabase.from("timetable_periods").select("*").eq("school_id", schoolId).order("sort_order"),
