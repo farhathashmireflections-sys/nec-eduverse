@@ -83,6 +83,66 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_message_recipients: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message_id: string
+          read_at: string | null
+          recipient_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_id: string
+          read_at?: string | null
+          recipient_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_id?: string
+          read_at?: string | null
+          recipient_user_id?: string
+        }
+        Relationships: []
+      }
+      admin_messages: {
+        Row: {
+          attachment_urls: Json | null
+          content: string
+          created_at: string
+          id: string
+          reply_to_id: string | null
+          school_id: string
+          sender_user_id: string
+          subject: string | null
+        }
+        Insert: {
+          attachment_urls?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          reply_to_id?: string | null
+          school_id: string
+          sender_user_id: string
+          subject?: string | null
+        }
+        Update: {
+          attachment_urls?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          reply_to_id?: string | null
+          school_id?: string
+          sender_user_id?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       ai_academic_predictions: {
         Row: {
           created_at: string
@@ -470,6 +530,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          school_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          school_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          school_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string
@@ -713,6 +806,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cleared_conversations: {
+        Row: {
+          cleared_at: string
+          id: string
+          partner_user_id: string
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string
+          id?: string
+          partner_user_id: string
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string
+          id?: string
+          partner_user_id?: string
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_activities: {
         Row: {
           activity_type: string
@@ -941,6 +1058,36 @@ export type Database = {
         }
         Relationships: []
       }
+      diary_entries: {
+        Row: {
+          class_section_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          entry_date: string
+          id: string
+          school_id: string
+        }
+        Insert: {
+          class_section_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          entry_date?: string
+          id?: string
+          school_id: string
+        }
+        Update: {
+          class_section_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          entry_date?: string
+          id?: string
+          school_id?: string
+        }
+        Relationships: []
+      }
       exam_question_papers: {
         Row: {
           created_at: string
@@ -1016,6 +1163,51 @@ export type Database = {
           remarks?: string | null
           school_id?: string
           student_id?: string
+        }
+        Relationships: []
+      }
+      exams: {
+        Row: {
+          class_section_id: string | null
+          created_at: string
+          created_by: string
+          exam_date: string | null
+          exam_type: string
+          id: string
+          max_marks: number
+          school_id: string
+          status: string
+          subject_id: string | null
+          term_label: string | null
+          title: string
+        }
+        Insert: {
+          class_section_id?: string | null
+          created_at?: string
+          created_by: string
+          exam_date?: string | null
+          exam_type?: string
+          id?: string
+          max_marks?: number
+          school_id: string
+          status?: string
+          subject_id?: string | null
+          term_label?: string | null
+          title: string
+        }
+        Update: {
+          class_section_id?: string | null
+          created_at?: string
+          created_by?: string
+          exam_date?: string | null
+          exam_type?: string
+          id?: string
+          max_marks?: number
+          school_id?: string
+          status?: string
+          subject_id?: string | null
+          term_label?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -1601,6 +1793,42 @@ export type Database = {
           is_active?: boolean
           school_id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      notices: {
+        Row: {
+          audience: string
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_pinned: boolean
+          published_at: string | null
+          school_id: string
+          title: string
+        }
+        Insert: {
+          audience?: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_pinned?: boolean
+          published_at?: string | null
+          school_id: string
+          title: string
+        }
+        Update: {
+          audience?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_pinned?: boolean
+          published_at?: string | null
+          school_id?: string
+          title?: string
         }
         Relationships: []
       }
@@ -2345,12 +2573,15 @@ export type Database = {
           gender: string | null
           id: string
           last_name: string | null
+          parent_name: string | null
+          parent_phone: string | null
           parent_profile_id: string | null
           phone: string | null
           profile_id: string | null
           roll_number: string | null
           school_id: string
           status: string | null
+          student_code: string | null
           updated_at: string
         }
         Insert: {
@@ -2364,12 +2595,15 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           parent_profile_id?: string | null
           phone?: string | null
           profile_id?: string | null
           roll_number?: string | null
           school_id: string
           status?: string | null
+          student_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -2383,12 +2617,15 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           parent_profile_id?: string | null
           phone?: string | null
           profile_id?: string | null
           roll_number?: string | null
           school_id?: string
           status?: string | null
+          student_code?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2713,6 +2950,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_finance: { Args: { _school_id: string }; Returns: boolean }
+      can_manage_staff: { Args: { _school_id: string }; Returns: boolean }
+      can_manage_students: { Args: { _school_id: string }; Returns: boolean }
+      can_work_crm: { Args: { _school_id: string }; Returns: boolean }
       get_school_public_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -2724,6 +2965,10 @@ export type Database = {
       get_student_id: {
         Args: { _school_id: string; _user_id: string }
         Returns: string
+      }
+      has_role: {
+        Args: { _role: string; _school_id: string }
+        Returns: boolean
       }
       has_school_role: {
         Args: { _role: string; _school_id: string; _user_id: string }
